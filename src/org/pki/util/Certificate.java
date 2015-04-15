@@ -9,7 +9,7 @@ import java.security.cert.X509Certificate;
 
 public class Certificate {
 
-    private X509Certificate certificate;
+    private X509CertImpl certificate;
 
     public Certificate(File file) throws FileNotFoundException, CertificateException{
         this.certificate = new X509CertImpl(new FileInputStream(file));
@@ -19,8 +19,8 @@ public class Certificate {
         this.certificate = new X509CertImpl(certData);
     }
 
-    public Certificate(X509Certificate x509Certificate){
-        this.certificate = x509Certificate;
+    public Certificate(X509Certificate x509Certificate) throws CertificateException{
+        this.certificate = X509CertImpl.toImpl(x509Certificate);
     }
 
     public boolean hasExpired(){
@@ -56,8 +56,22 @@ public class Certificate {
         return this.certificate.getSubjectDN();
     }
 
-    public X509Certificate getX509Certificate(){
+    public boolean outputCerticateToDirectory(File file){
+
+        if(file.exists()){
+            file.delete();
+        }
+
+        //output encoded certficate file to the directory in .crt format
+        return true; //return status
+    }
+
+    public X509CertImpl getX509Certificate(){
         return this.certificate;
+    }
+
+    public byte[] sign(byte[] data){
+        return null;
     }
 
 }

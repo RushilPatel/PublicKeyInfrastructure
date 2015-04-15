@@ -46,8 +46,25 @@ public class Key {
         this.privateKey = kf.generatePrivate(keySpec);
     }
 
+    public Key(PrivateKey privateKey){
+        this.privateKey = privateKey;
+    }
+
     public PrivateKey getPrivateKey(){
         return this.privateKey;
+    }
+
+    public boolean outputKeyToDirectory(File file){
+
+        //output encoded key file to the directory in .key format
+        if(file.exists()){
+            file.delete();
+        }
+        return true;
+    }
+
+    public byte[] sign(byte[] data){
+        return null;
     }
 
 }

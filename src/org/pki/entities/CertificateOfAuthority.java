@@ -1,4 +1,4 @@
-package org.pki.entitities;
+package org.pki.entities;
 
 public class CertificateOfAuthority implements Runnable{
 

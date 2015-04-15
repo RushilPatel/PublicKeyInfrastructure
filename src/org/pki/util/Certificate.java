@@ -48,6 +48,14 @@ public class Certificate {
         }
     }
 
+    public Principal getIssuer(){
+        return this.certificate.getIssuerDN();
+    }
+
+    public Principal getSubject(){
+        return this.certificate.getSubjectDN();
+    }
+
     public X509Certificate getX509Certificate(){
         return this.certificate;
     }

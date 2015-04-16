@@ -1,29 +1,43 @@
 package org.pki.entities;
 
+import org.pki.dto.SocketMessage;
 import org.pki.util.Certificate;
 import org.pki.util.Key;
+import org.pki.util.SocketIOStream;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.security.Principal;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 public class CertificateOfAuthority implements Runnable{
 
-    private final Certificate certificate = null;
+    private Socket socket = null;
+    private HashMap<Principal, Certificate> certificateStore;
+    private Certificate certificate = null;
+    private Key privateKey = null;
+
+    public CertificateOfAuthority(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
+        //todo add in null/validity checks
+        this.socket = socket;
+        this.certificateStore = certificateStore;
+        this.certificate = certificate;
+        this.privateKey = privateKey;
+    }
+
     @Override
     public void run() {
-        if(certificate == null){
 
-        }
     }
 
     public Certificate signPublicKey(X509Certificate certificateToSign) throws Exception{
-        Certificate caCertificate = null; //load ca certificate
-        Key caKey = null; //load ca key
-
         X509CertImpl cert = X509CertImpl.toImpl(certificateToSign);
-        cert.sign(caKey.getPrivateKey(), cert.getSigAlgName());
+        cert.sign(privateKey.getPrivateKey(), cert.getSigAlgName());
         cert.set(X509CertImpl.ISSUER_DN, cert.getIssuerDN());
         return new Certificate(cert);
     }

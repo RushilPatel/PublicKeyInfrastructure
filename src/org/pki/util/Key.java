@@ -60,7 +60,11 @@ public class Key {
             System.out.println("Overwriting existing file");
             file.delete();
         }
-        return file.createNewFile();
+        byte dataToWrite[] = this.privateKey.getEncoded();
+        FileOutputStream out = new FileOutputStream(file.getPath());
+        out.write(dataToWrite);
+        out.close();
+        return true;
     }
 
     public byte[] sign(byte[] data){

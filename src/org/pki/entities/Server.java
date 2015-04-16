@@ -15,16 +15,15 @@ import java.util.HashMap;
 public class Server implements Runnable{
 
     private Socket socket;
-
     private HashMap<Principal, Certificate> certificateStore;
-    private Certificate serverCertificate;
-    private Key serverKey;
+    private Certificate certificate;
+    private Key privateKey;
 
-    public Server(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate serverCertificate, Key serverKey){
+    public Server(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
         this.certificateStore = certificateStore;
-        this.serverCertificate = serverCertificate;
-        this.serverKey = serverKey;
+        this.certificate = certificate;
+        this.privateKey = privateKey;
     }
 
     @Override
@@ -44,7 +43,7 @@ public class Server implements Runnable{
             }
 
             if(clientCertificate != null){
-                SocketMessage certMessage = new SocketMessage(false, this.serverCertificate.getX509Certificate().getEncoded());
+                SocketMessage certMessage = new SocketMessage(false, this.certificate.getX509Certificate().getEncoded());
                 socketIOStream.sendMessage(certMessage);
             }else{
                 socketIOStream.close();

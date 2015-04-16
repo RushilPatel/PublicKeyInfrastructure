@@ -60,12 +60,16 @@ public class Key {
         return this.privateKey;
     }
 
-    public boolean outputKeyToDirectory(File file){
-
+    public boolean outputKeyToDirectory(File file)throws IOException{
         //output encoded key file to the directory in .key format
         if(file.exists()){
+            System.out.println("Overwriting existing file");
             file.delete();
         }
+        byte dataToWrite[] = this.privateKey.getEncoded();
+        FileOutputStream out = new FileOutputStream(file.getPath());
+        out.write(dataToWrite);
+        out.close();
         return true;
     }
 

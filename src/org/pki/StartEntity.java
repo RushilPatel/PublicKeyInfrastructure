@@ -1,8 +1,10 @@
 package org.pki;
 
+import org.pki.entities.CertificateOfAuthority;
 import org.pki.entities.Server;
 import org.pki.util.Certificate;
 import org.pki.util.Key;
+import org.pki.util.Keygen;
 
 import java.io.File;
 import java.net.ServerSocket;
@@ -12,7 +14,7 @@ import java.util.HashMap;
 
 public class StartEntity {
     public static void main(String [] args) throws Exception{
-        if(args.length < 4){
+        if(args.length > 4){
             System.out.println("Error: Invalid Arguments!");
         }else{
             String role = args[0];
@@ -21,7 +23,7 @@ public class StartEntity {
             }else if(role.equals("CLIENT")){
                 startClient();
             }else if(role.equals("CA")){
-                startCertificateOfAuthority();
+                startCertificateOfAuthority(args[1], args[2], args[3]);
             }else {
                 System.out.println("Error: Invalid Role!");
             }
@@ -30,24 +32,68 @@ public class StartEntity {
     }
 
     private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{
-        Certificate serverCertificate = new Certificate(new File(certificatePath));
-        Key serverKey = new Key(new File(keyPath));
+        if(certificatePath == null){
+            certificatePath = Server.CertificateFile_Default;
+        }
+        if(keyPath == null) {
+            keyPath = Server.KeyFile_Default;
+        }
+        if(trustedCertsDir == null) {
+            trustedCertsDir = Server.TrustedCertsDir_Default;
+        }
+        File cp = new File(certificatePath);
+        File kp = new File(keyPath);
+        if((!cp.exists() && !kp.exists()) || Server.OverwriteKeys){
+            System.out.println("Generating Certs and Keys...");
+            Keygen kg = new Keygen(cp,kp,Server.getX500Name(),new Socket());
+        }
+
+        // Load certs/keys
+        Certificate serverCertificate = new Certificate(cp);
+        Key serverKey = new Key(kp);
         HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
 
-        ServerSocket serverSocket = new ServerSocket(7777);
+        ServerSocket serverSocket = new ServerSocket(Server.Port);
         while (true){
             Socket socket = serverSocket.accept();
             new Thread(new Server(socket, certificateStore, serverCertificate, serverKey)).start();
         }
     }
 
-    private static void startCertificateOfAuthority(){
-        String trustedCertsDir = "certificatestore/server/trustedcerts";
+    private static void startCertificateOfAuthority(String trustedCertsDir, String certificatePath, String keyPath)throws Exception{
+        if(certificatePath == null){
+            certificatePath = CertificateOfAuthority.CertificateFile_Default;
+        }
+        if(keyPath == null) {
+            keyPath = CertificateOfAuthority.KeyFile_Default;
+        }
+        if(trustedCertsDir == null) {
+            trustedCertsDir = CertificateOfAuthority.TrustedCertsDir_Default;
+        }
+        File cp = new File(certificatePath);
+        File kp = new File(keyPath);
+        Key key;
 
+        if((!cp.exists() && !kp.exists()) || CertificateOfAuthority.OverwriteKeys){
+            System.out.println("Generating Certs and Keys...");
+            Keygen kg = new Keygen(cp,kp, CertificateOfAuthority.getX500Name(),new Socket());
+            key = kg.getKey();
+        }else{
+            Key caKey = new Key(kp);
+        }
+        // Load certs/keys
+        Certificate caCertificate = new Certificate(cp);
+        HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
+
+        ServerSocket serverSocket = new ServerSocket(CertificateOfAuthority.Port);
+        while (true){
+            Socket socket = serverSocket.accept();
+            new Thread(new CertificateOfAuthority(socket, certificateStore, caCertificate, key)).start();
+        }
     }
 
     private static void startClient(){
-        String trustedCertsDir = "certificatestore/server/trustedcerts";
+        String trustedCertsDir = "certificatestore/ca/trustedcerts";
 
     }
 
@@ -55,6 +101,7 @@ public class StartEntity {
         HashMap<Principal, Certificate> certificateStore = new HashMap<Principal, Certificate>();
 
         for(File file : new File(trustedCertsDir).listFiles()){
+
             Certificate certificate = new Certificate(file);
             certificateStore.put(certificate.getSubject(), certificate);
         }

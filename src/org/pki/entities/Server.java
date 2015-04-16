@@ -4,7 +4,7 @@ import org.pki.dto.SocketMessage;
 import org.pki.util.Certificate;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
-
+import sun.security.x509.X500Name;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
@@ -81,4 +81,21 @@ public class Server implements Runnable{
             }
         }
     }
+
+     public static X500Name getX500Name()throws IOException{
+         X500Name x500Name = new X500Name(X500Name_CommonName, X500Name_OrganizationalUnit, X500Name_Organization, X500Name_City, X500Name_State, X500Name_Country);
+         return x500Name;
+     }
+    public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";
+    public static final String CertificateFile_Default = "certificatestore/ca/cert.crt";
+    public static final String KeyFile_Default = "certificatestore/ca/key.key";
+    public static final boolean OverwriteKeys = true;
+    public static final int Port = 7777;
+
+    private static final String X500Name_CommonName = "www.SecureBankServer.fit.edu";
+    private static final String X500Name_OrganizationalUnit = "IT";
+    private static final String X500Name_Organization = "SecureBank";
+    private static final String X500Name_City = "SomeCity";
+    private static final String X500Name_State = "SomeState";
+    private static final String X500Name_Country = "Internet";
 }

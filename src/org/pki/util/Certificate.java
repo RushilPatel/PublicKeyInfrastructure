@@ -56,14 +56,12 @@ public class Certificate {
         return this.certificate.getSubjectDN();
     }
 
-    public boolean outputCerticateToDirectory(File file){
-
+    public boolean outputCertificateToDirectory(File file) throws IOException{
         if(file.exists()){
+            System.out.println("Overwriting existing file");
             file.delete();
         }
-
-        //output encoded certficate file to the directory in .crt format
-        return true; //return status
+        return file.createNewFile();
     }
 
     public X509CertImpl getX509Certificate(){

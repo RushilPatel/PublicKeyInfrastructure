@@ -21,6 +21,7 @@ public class Keygen {
         }else{
             int signAttempts = 0;
             while(certificate == null && signAttempts < 10) {
+                signAttempts++;
                 Thread.sleep(1000);
                 System.out.println("Requesting CA to sign my key. " + signAttempts);
                 certificate = getSignedCertificate(unsignedKey.getSelfCertificate(x500Named, 1096), key, caSocket);
@@ -29,8 +30,8 @@ public class Keygen {
                 throw new Exception("Unable to sign Certificate");
             }
         }
-        key.outputKeyToDirectory(keyFile);
-        certificate.outputCertificateToDirectory(certFile);
+        key.outputKeyToFile(keyFile);
+        certificate.outputCertificateToFile(certFile);
     }
 
     private CertAndKeyGen generateKeyPair() throws Exception{

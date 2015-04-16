@@ -1,17 +1,18 @@
 package org.pki.util;
 
+import sun.misc.BASE64Encoder;
+import sun.security.provider.X509Factory;
 import sun.security.x509.X509CertImpl;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 
 public class Certificate {
 
@@ -62,16 +63,23 @@ public class Certificate {
         return this.certificate.getSubjectDN();
     }
 
-    public boolean outputCertificateToDirectory(File file) throws Exception{
+    public void outputCertificateToFile(File file) throws CertificateEncodingException, IOException{
         if(file.exists()){
             System.out.println("Overwriting existing file");
             file.delete();
         }
-        byte dataToWrite[] = this.certificate.getEncoded();
-        FileOutputStream out = new FileOutputStream(file.getPath());
-        out.write(dataToWrite);
+        BufferedWriter out = new BufferedWriter(new FileWriter(file));
+        BASE64Encoder encoder = new BASE64Encoder();
+        out.write(X509Factory.BEGIN_CERT);
+        out.newLine();
+        out.write(encoder.encode(this.getEncoded()));
+        out.write(X509Factory.END_CERT);
+        out.newLine();
         out.close();
-        return true;
+    }
+
+    public byte[] getEncoded() throws CertificateEncodingException{
+        return this.certificate.getEncoded();
     }
 
     public X509CertImpl getX509Certificate(){
@@ -80,6 +88,21 @@ public class Certificate {
 
     public PublicKey getPublicKey(){
         return getX509Certificate().getPublicKey();
+    }
+
+    public Certificate sign(Certificate certificateToSign, Key key) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, CertificateException, SignatureException, IOException{
+        X509CertImpl cert = certificateToSign.getX509Certificate();
+        cert.sign(key.getPrivateKey(), certificateToSign.getSigAlgName());
+        cert.set(X509CertImpl.ISSUER_DN, this.getSubject());
+        return new Certificate(cert);
+    }
+
+    public String getSigAlgName(){
+        return this.certificate.getSigAlgName();
+    }
+
+    public Principal getIssuerDN(){
+        return this.certificate.getIssuerDN();
     }
 
     public byte[] encrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {

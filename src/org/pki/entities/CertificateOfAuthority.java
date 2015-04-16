@@ -35,11 +35,8 @@ public class CertificateOfAuthority implements Runnable{
 
     }
 
-    public Certificate signPublicKey(X509Certificate certificateToSign) throws Exception{
-        X509CertImpl cert = X509CertImpl.toImpl(certificateToSign);
-        cert.sign(privateKey.getPrivateKey(), cert.getSigAlgName());
-        cert.set(X509CertImpl.ISSUER_DN, cert.getIssuerDN());
-        return new Certificate(cert);
+    public Certificate signCertificate(X509Certificate certificateToSign) throws Exception{
+        return this.certificate.sign(new Certificate(certificateToSign), this.privateKey);
     }
 
     public static X500Name getX500Name()throws IOException {

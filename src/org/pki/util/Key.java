@@ -8,14 +8,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
 
 public class Key {
 
@@ -60,7 +54,7 @@ public class Key {
         return this.privateKey;
     }
 
-    public boolean outputKeyToDirectory(File file)throws IOException{
+    public boolean outputKeyToFile(File file) throws IOException{
         //output encoded key file to the directory in .key format
         if(file.exists()){
             System.out.println("Overwriting existing file");
@@ -86,17 +80,16 @@ public class Key {
         Cipher cipher = Cipher.getInstance(this.getPrivateKey().getAlgorithm());
         cipher.init(mode, this.getPrivateKey());
 
-        // toReturn will hold the total result
-        byte[] output = new byte[0];
+        byte[] temp = new byte[0]; //temp result holder
         int blockLength = encrypt ? cipher.getOutputSize(1) - 20 : cipher.getOutputSize(1);
 
         int offset = 0;
-        int totalBlocks = (int) Math.ceil((double)data.length / (double)blockLength);
+        int totalBlocks = (int) Math.ceil((double) data.length / (double)blockLength);
         for(int i = 0; i < totalBlocks - 1; i++){
-            output = concatenateByteArrays(output,cipher.doFinal(data, offset, blockLength));
+            temp = concatenateByteArrays(temp,cipher.doFinal(data, offset, blockLength));
             offset = offset + blockLength;
         }
-        return concatenateByteArrays(output, cipher.doFinal(data, offset, data.length - offset));
+        return concatenateByteArrays(temp, cipher.doFinal(data, offset, data.length - offset));
     }
 
     private byte[] concatenateByteArrays(byte[] org_array, byte[] new_array){

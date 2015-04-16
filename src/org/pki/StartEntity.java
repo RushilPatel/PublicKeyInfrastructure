@@ -26,6 +26,7 @@ public class StartEntity {
                 System.out.println("Error: Invalid Role!");
             }
         }
+
     }
 
     private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{

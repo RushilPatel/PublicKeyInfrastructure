@@ -28,7 +28,6 @@ public class StartEntity {
                 System.out.println("Error: Invalid Role!");
             }
         }
-
     }
 
     private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{
@@ -45,12 +44,12 @@ public class StartEntity {
         File kp = new File(keyPath);
         if((!cp.exists() && !kp.exists()) || Server.OverwriteKeys){
             System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(cp,kp,Server.getX500Name(),new Socket());
+            Keygen kg = new Keygen(Server.getX500Name());
         }
 
         // Load certs/keys
         Certificate serverCertificate = new Certificate(cp);
-        Key serverKey = new Key(kp);
+        Key serverKey = new Key(kp, Key.ALGORITHM_RSA);
         HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
 
         ServerSocket serverSocket = new ServerSocket(Server.Port);
@@ -76,10 +75,10 @@ public class StartEntity {
 
         if((!cp.exists() && !kp.exists()) || CertificateOfAuthority.OverwriteKeys){
             System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(cp,kp, CertificateOfAuthority.getX500Name(),new Socket());
+            Keygen kg = new Keygen(CertificateOfAuthority.getX500Name());
             key = kg.getKey();
         }else{
-            Key caKey = new Key(kp);
+            Key caKey = new Key(kp, Key.ALGORITHM_RSA);
         }
         // Load certs/keys
         Certificate caCertificate = new Certificate(cp);

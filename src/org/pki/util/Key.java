@@ -1,6 +1,8 @@
 package org.pki.util;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import sun.misc.BASE64Encoder;
+import sun.security.provider.X509Factory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -13,9 +15,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 
 public class Key {
 
+    public static final String ALGORITHM_RSA = "RSA";
+    public static final String ALGORITHM_DSA = "DSA";
+
     private PrivateKey privateKey;
 
-    public Key(File file) throws FileNotFoundException, IOException, NoSuchAlgorithmException, InvalidKeySpecException{
+    public Key(File file, String algorithm) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException{
         StringBuilder sb = new StringBuilder();
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line = reader.readLine();
@@ -32,17 +37,13 @@ public class Key {
         key = key.replace("-----END PRIVATE KEY-----", "");
 
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decode(key));
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        this.privateKey = kf.generatePrivate(keySpec);
+        KeyFactory kf = KeyFactory.getInstance(algorithm);
+        this.privateKey =  kf.generatePrivate(keySpec);
     }
 
-    private Key(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
-        this(key.getBytes());
-    }
-
-    private Key(byte[] key) throws NoSuchAlgorithmException, InvalidKeySpecException{
+    private Key(byte[] key, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException{
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(key);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
+        KeyFactory kf = KeyFactory.getInstance(algorithm);
         this.privateKey = kf.generatePrivate(keySpec);
     }
 
@@ -54,17 +55,20 @@ public class Key {
         return this.privateKey;
     }
 
-    public boolean outputKeyToFile(File file) throws IOException{
-        //output encoded key file to the directory in .key format
+    public void outputKeyToFile(File file) throws IOException{
         if(file.exists()){
             System.out.println("Overwriting existing file");
             file.delete();
         }
-        byte dataToWrite[] = this.privateKey.getEncoded();
-        FileOutputStream out = new FileOutputStream(file.getPath());
-        out.write(dataToWrite);
+        file.createNewFile();
+        BufferedWriter out = new BufferedWriter(new FileWriter(file));
+        BASE64Encoder encoder = new BASE64Encoder();
+        out.write("-----BEGIN PRIVATE KEY-----");
+        out.newLine();
+        out.write(encoder.encode(this.privateKey.getEncoded()));
+        out.newLine();
+        out.write("-----END PRIVATE KEY-----");
         out.close();
-        return true;
     }
 
     public byte[] encrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{
@@ -73,6 +77,10 @@ public class Key {
 
     public byte[] decrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{
         return encryptOrDecrypt(data, false);
+    }
+
+    public boolean equals(Key key){
+        return this.privateKey.equals(key.getPrivateKey());
     }
 
     private byte[] encryptOrDecrypt(byte[] data, boolean encrypt) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{

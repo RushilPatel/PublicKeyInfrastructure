@@ -2,7 +2,7 @@ package org.pki.util;
 
 import sun.misc.BASE64Encoder;
 import sun.security.provider.X509Factory;
-import sun.security.x509.X509CertImpl;
+import sun.security.x509.*;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -68,13 +68,14 @@ public class Certificate {
             System.out.println("Overwriting existing file");
             file.delete();
         }
+        file.createNewFile();
         BufferedWriter out = new BufferedWriter(new FileWriter(file));
         BASE64Encoder encoder = new BASE64Encoder();
         out.write(X509Factory.BEGIN_CERT);
         out.newLine();
         out.write(encoder.encode(this.getEncoded()));
-        out.write(X509Factory.END_CERT);
         out.newLine();
+        out.write(X509Factory.END_CERT);
         out.close();
     }
 
@@ -90,11 +91,32 @@ public class Certificate {
         return getX509Certificate().getPublicKey();
     }
 
+//    public Certificate sign(Certificate certificateToSign, Key key) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, CertificateException, SignatureException, IOException{
+//        X509CertImpl cert = certificateToSign.getX509Certificate();
+//        cert.sign(key.getPrivateKey(), certificateToSign.getSigAlgName());
+//        cert.set(X509CertImpl.ISSUER_DN, this.getSubject());
+//        return new Certificate(cert);
+//    }
+
     public Certificate sign(Certificate certificateToSign, Key key) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, CertificateException, SignatureException, IOException{
         X509CertImpl cert = certificateToSign.getX509Certificate();
-        cert.sign(key.getPrivateKey(), certificateToSign.getSigAlgName());
-        cert.set(X509CertImpl.ISSUER_DN, this.getSubject());
-        return new Certificate(cert);
+
+        X509CertInfo newCertInfo = (X509CertInfo)cert.get
+                (X509CertImpl.NAME + "." + X509CertImpl.INFO);
+
+        X509CertInfo caCertInfo = (X509CertInfo)this.certificate.get
+                (X509CertImpl.NAME + "." + X509CertImpl.INFO);
+        X500Name issuer = (X500Name)caCertInfo.get
+                (X509CertInfo.SUBJECT + "." + CertificateIssuerName.DN_NAME);
+
+
+        // Set the issuer
+        newCertInfo.set(X509CertInfo.ISSUER +
+                "." + CertificateSubjectName.DN_NAME, issuer);
+
+        X509CertImpl newCert = new X509CertImpl(newCertInfo);
+        newCert.sign(key.getPrivateKey(), this.getSigAlgName());
+        return new Certificate(newCert);
     }
 
     public String getSigAlgName(){
@@ -111,6 +133,10 @@ public class Certificate {
 
     public byte[] decrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{
         return encryptOrDecrypt(data, false);
+    }
+
+    public boolean equals(Certificate cert){
+        return this.certificate.equals(cert.getX509Certificate());
     }
 
     private byte[] encryptOrDecrypt(byte[] data, boolean encrypt) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{

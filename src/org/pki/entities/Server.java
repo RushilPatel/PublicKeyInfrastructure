@@ -18,6 +18,7 @@ public class Server implements Runnable{
     private HashMap<Principal, Certificate> certificateStore;
     private Certificate certificate;
     private Key privateKey;
+    private Certificate clientCertificate;
 
     public Server(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
@@ -30,31 +31,42 @@ public class Server implements Runnable{
     public void run() {
         try{
             SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
-            Certificate clientCertificate = null;
-            try{
-                clientCertificate = new Certificate(socketIOStream.readMessage().getData());
-                validateCertificate(clientCertificate);
 
-                //send cert to client
+            //validates client certificate
+            try{
+                this.clientCertificate = new Certificate(socketIOStream.readMessage().getData());
+                validateCertificate(clientCertificate);
             }catch (CertificateException e){
                 socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
             }catch (Exception e){
                 e.printStackTrace();
             }
 
+            //if clientCertificate is null, it is invalid
             if(clientCertificate != null){
-                SocketMessage certMessage = new SocketMessage(false, this.certificate.getX509Certificate().getEncoded());
+                //encrypt server's cert with client's public anad send it to client
+                SocketMessage certMessage = new SocketMessage(false, encryptMessage(this.certificate.getX509Certificate().getEncoded()));
                 socketIOStream.sendMessage(certMessage);
+
             }else{
                 socketIOStream.close();
                 socket.close();
             }
         }catch (IOException e){
             e.printStackTrace();
-        }catch (CertificateEncodingException e){
+        }catch (CertificateEncodingException e) {
+            e.printStackTrace();
+        }catch (Exception e){
             e.printStackTrace();
         }
+    }
 
+    private byte[] encryptMessage(byte[] data) throws Exception{
+        return this.clientCertificate.encrypt(data);
+    }
+
+    private byte [] decryptMessage(byte[] data) throws Exception{
+        return this.privateKey.decrypt(data);
     }
 
     private void validateCertificate(Certificate certificate) throws Exception{

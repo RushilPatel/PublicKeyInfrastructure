@@ -12,11 +12,11 @@ import java.util.HashMap;
  */
 public class EntityUtil {
 
-    private byte[] encryptMessage(Certificate cert, Key key,byte[] data) throws Exception{
+    public static byte[] encryptMessage(Certificate cert, Key key,byte[] data) throws Exception{
         return cert.encrypt(key.encrypt(data));
     }
 
-    private byte [] decryptMessage(Certificate cert, Key key, byte[] data) throws Exception{
+    public static byte [] decryptMessage(Certificate cert, Key key, byte[] data) throws Exception{
         return cert.decrypt(key.decrypt(data));
 
     }

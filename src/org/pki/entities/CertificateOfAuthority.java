@@ -2,13 +2,12 @@ package org.pki.entities;
 
 import org.pki.dto.SocketMessage;
 import org.pki.util.Certificate;
+import org.pki.util.EntityUtil;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
-import sun.security.x509.X500Name;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
 public class CertificateOfAuthority implements Runnable{
@@ -31,16 +30,17 @@ public class CertificateOfAuthority implements Runnable{
         try{
             SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
             SocketMessage message = socketIOStream.readMessage();
-            //Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
-            //Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
+            Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
+            Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
+            byte[] encryptedCert = EntityUtil.encryptMessage(signedClientCertificate, this.privateKey, signedClientCertificate.getEncoded());
+            SocketMessage socketMessage = new SocketMessage(false, encryptedCert);
+            socketIOStream.sendMessage(socketMessage);
+            socketIOStream.close();
         }catch (IOException e){
             e.printStackTrace();
+        }catch (Exception e){
+            e.printStackTrace();
         }
-    }
-
-    public static X500Name getX500Name()throws IOException {
-        X500Name x500Name = new X500Name(X500Name_CommonName, X500Name_OrganizationalUnit, X500Name_Organization, X500Name_City, X500Name_State, X500Name_Country);
-        return x500Name;
     }
 
     public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";

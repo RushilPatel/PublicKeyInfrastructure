@@ -38,20 +38,29 @@ public class Server implements Runnable{
                 validateCertificate(clientCertificate);
             }catch (CertificateException e){
                 socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
+                System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
             }catch (Exception e){
                 e.printStackTrace();
             }
+
 
             //if clientCertificate is null, it is invalid
             if(clientCertificate != null){
                 //encrypt server's cert with client's public anad send it to client
                 SocketMessage certMessage = new SocketMessage(false, encryptMessage(this.certificate.getX509Certificate().getEncoded()));
                 socketIOStream.sendMessage(certMessage);
-
             }else{
                 socketIOStream.close();
                 socket.close();
+                return;
             }
+
+            String request = null;
+            while(request != "DONE"){
+                request = socketIOStream.readMessage().getData().toString();
+                System.out.println(request);
+            }
+
         }catch (IOException e){
             e.printStackTrace();
         }catch (CertificateEncodingException e) {

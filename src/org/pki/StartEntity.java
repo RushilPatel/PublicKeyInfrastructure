@@ -1,6 +1,7 @@
 package org.pki;
 
 import org.pki.entities.CertificateOfAuthority;
+import org.pki.entities.Client;
 import org.pki.entities.Server;
 import org.pki.util.Certificate;
 import org.pki.util.Key;
@@ -33,6 +34,7 @@ public class StartEntity {
     }
 
     private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{
+        //Check args
         if(certificatePath.equals("D")){
             System.out.println("Using default certificate path.");
             certificatePath = Server.CertificateFile_Default;
@@ -45,6 +47,7 @@ public class StartEntity {
             System.out.println("Using default trusted certificate path.");
             trustedCertsDir = Server.TrustedCertsDir_Default;
         }
+        //create cert/key if necessary
         File cp = new File(certificatePath);
         File kp = new File(keyPath);
         if((!cp.exists() && !kp.exists()) || Server.OverwriteKeys){
@@ -59,6 +62,7 @@ public class StartEntity {
         Key serverKey = new Key(kp, Key.ALGORITHM_RSA);
         HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
 
+        //Start server
         ServerSocket serverSocket = new ServerSocket(Server.Port);
         while (true){
             Socket socket = serverSocket.accept();
@@ -102,9 +106,36 @@ public class StartEntity {
         }
     }
 
-    private static void startClient(){
-        String trustedCertsDir = "certificatestore/ca/trustedcerts";
+    private static void startClient(String trustedCertsDir, String certificatePath, String keyPath)throws Exception{
+        //Check args
+        if(certificatePath.equals("D")){
+            System.out.println("Using default certificate path.");
+            certificatePath = Client.CertificateFile_Default;
+        }
+        if(keyPath.equals("D")) {
+            System.out.println("Using default key path.");
+            keyPath = Client.KeyFile_Default;
+        }
+        if(trustedCertsDir.equals("D")) {
+            System.out.println("Using default trusted certificate path.");
+            trustedCertsDir = Client.TrustedCertsDir_Default;
+        }
+        //create cert/key if necessary
+        File cp = new File(certificatePath);
+        File kp = new File(keyPath);
+        if((!cp.exists() && !kp.exists()) || Client.OverwriteKeys){
+            System.out.println("Generating Certs and Keys...");
+            Keygen kg = new Keygen(Client.getX500Name());
+            kg.getCertificate().outputCertificateToFile(cp);
+            kg.getKey().outputKeyToFile(kp);
+        }
 
+        // Load certs/keys
+        Certificate certificate = new Certificate(cp);
+        Key key = new Key(kp, Key.ALGORITHM_RSA);
+        HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
+
+        //start client
     }
 
     private static HashMap<Principal, Certificate> getCertificateStore(String trustedCertsDir){

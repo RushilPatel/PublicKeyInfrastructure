@@ -71,6 +71,10 @@ public class Server implements Runnable{
         }
     }
 
+    public static final String DEPOSIT = "DEPOSIT";
+    public static final String WITHDRAW = "WITHDRAW";
+    public static final String BALANCE = "BALANCE";
+    public static final String DONE = "DONE";
     public static final String TrustedCertsDir_Default = "certificatestore/server/trustedcerts";
     public static final String CACertificateFile_Default = "certificatestore/server/trustedcerts/ca.crt";
     public static final String CertificateFile_Default = "certificatestore/server/cert.crt";

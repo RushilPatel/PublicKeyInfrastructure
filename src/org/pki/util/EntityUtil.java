@@ -24,7 +24,7 @@ public class EntityUtil {
 
     public static void validateCertificate(HashMap<Principal, Certificate> certificateStore, Certificate certificate) throws Exception{
         if(certificate.hasExpired()){
-            throw new CertificateException("Cerificate has expired!");
+            throw new CertificateException("Certificate has expired!");
         }else if(certificate.isSelfSigned()){
             throw new CertificateException("Certificate is self signed!");
         }else{

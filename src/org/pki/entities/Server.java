@@ -21,12 +21,20 @@ public class Server implements Runnable{
     private Key privateKey;
     private Certificate clientCertificate;
 
+    /**
+     *
+     * @param socket
+     * @param certificateStore
+     * @param certificate
+     * @param privateKey
+     */
     public Server(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
         this.certificateStore = certificateStore;
         this.certificate = certificate;
         this.privateKey = privateKey;
     }
+
 
     @Override
     public void run() {
@@ -58,7 +66,8 @@ public class Server implements Runnable{
 
             String request = null;
             while(request != DONE){
-                byte[] msg = socketIOStream.readMessage().getData();
+                byte[] msg = EntityUtil.decryptMessage(clientCertificate, privateKey, socketIOStream.readMessage().getData());
+                request = new String(msg);
                 System.out.println(new String(msg));
             }
 

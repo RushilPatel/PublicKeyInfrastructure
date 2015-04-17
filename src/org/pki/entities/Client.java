@@ -43,7 +43,7 @@ public class Client implements Runnable{
 
             //validates client certificate
             try{
-                this.serverCertificate = new Certificate(EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData()));
+                this.serverCertificate = new Certificate((privateKey.decrypt(socketIOStream.readMessage().getData())));
                 EntityUtil.validateCertificate(certificateStore, serverCertificate);
                 System.out.println("Server certificate validated");
             }catch (CertificateException e){

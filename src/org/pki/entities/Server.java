@@ -2,6 +2,7 @@ package org.pki.entities;
 
 import org.pki.dto.SocketMessage;
 import org.pki.util.Certificate;
+import org.pki.util.EntityUtil;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
 import sun.security.x509.X500Name;
@@ -35,7 +36,7 @@ public class Server implements Runnable{
             //validates client certificate
             try{
                 this.clientCertificate = new Certificate(socketIOStream.readMessage().getData());
-                validateCertificate(clientCertificate);
+                EntityUtil.validateCertificate(certificateStore,clientCertificate);
             }catch (CertificateException e){
                 socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
                 System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
@@ -47,7 +48,7 @@ public class Server implements Runnable{
             //if clientCertificate is null, it is invalid
             if(clientCertificate != null){
                 //encrypt server's cert with client's public anad send it to client
-                SocketMessage certMessage = new SocketMessage(false, encryptMessage(this.certificate.getX509Certificate().getEncoded()));
+                SocketMessage certMessage = new SocketMessage(false,this.clientCertificate.encrypt(this.certificate.getX509Certificate().getEncoded()));
                 socketIOStream.sendMessage(certMessage);
             }else{
                 socketIOStream.close();
@@ -70,37 +71,6 @@ public class Server implements Runnable{
         }
     }
 
-    private byte[] encryptMessage(byte[] data) throws Exception{
-        return this.clientCertificate.encrypt(data);
-    }
-
-    private byte [] decryptMessage(byte[] data) throws Exception{
-        return this.privateKey.decrypt(data);
-    }
-
-    private void validateCertificate(Certificate certificate) throws Exception{
-        if(certificate.hasExpired()){
-            throw new CertificateException("Cerificate has expired!");
-        }else if(certificate.isSelfSigned()){
-            throw new CertificateException("Certificate is self signed!");
-        }else{
-            validateCertificateSignature(certificate);
-        }
-    }
-
-    private void validateCertificateSignature(Certificate certificate) throws Exception{
-        Certificate caCertificate = certificateStore.get(certificate.getIssuer());
-        if(caCertificate == null){
-            throw new CertificateException("Untrusted issuer: " + certificate.getIssuer());
-        }else{
-            if(!caCertificate.getIssuer().equals(caCertificate.getSubject())){
-                validateCertificateSignature(caCertificate);
-            }
-            if(!certificate.isSignedBy(caCertificate)){
-                throw new CertificateException(String.format("Certificate of Subject (%s) is not signed by its Issuer (%s)" , certificate.getSubject(), certificate.getIssuer()));
-            }
-        }
-    }
 
      public static X500Name getX500Name()throws IOException{
          X500Name x500Name = new X500Name(X500Name_CommonName, X500Name_OrganizationalUnit, X500Name_Organization, X500Name_City, X500Name_State, X500Name_Country);

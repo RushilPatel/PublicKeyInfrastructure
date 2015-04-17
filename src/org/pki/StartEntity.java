@@ -24,7 +24,7 @@ public class StartEntity {
             if(role.equals("SERVER")){
                 startServer(args[1], args[2], args[3]);
             }else if(role.equals("CLIENT")){
-                startClient();
+                startClient(args[1], args[2], args[3]);
             }else if(role.equals("CA")){
                 startCertificateOfAuthority(args[1], args[2], args[3]);
             }else {
@@ -135,7 +135,9 @@ public class StartEntity {
         Key key = new Key(kp, Key.ALGORITHM_RSA);
         HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
 
-        //start client
+        Socket socket = new Socket("localhost", Server.Port);
+        System.out.println("Starting client");
+        new Thread(new Client(socket, certificateStore, certificate, key)).start();
     }
 
     private static HashMap<Principal, Certificate> getCertificateStore(String trustedCertsDir){

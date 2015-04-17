@@ -18,7 +18,6 @@ public class CertificateOfAuthority implements Runnable{
     private Key privateKey = null;
 
     public CertificateOfAuthority(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
-        //todo add in null/validity checks
         this.socket = socket;
         this.certificateStore = certificateStore;
         this.certificate = certificate;
@@ -46,13 +45,7 @@ public class CertificateOfAuthority implements Runnable{
     public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";
     public static final String CertificateFile_Default = "certificatestore/ca/cert.crt";
     public static final String KeyFile_Default = "certificatestore/ca/key.key";
-    public static final boolean OverwriteKeys = true;
     public static final int Port = 8888;
-
     public static final String X500Name_CommonName = "www.CertAuth.fit.edu";
-    private static final String X500Name_OrganizationalUnit = "Admin";
-    private static final String X500Name_Organization = "fit";
-    private static final String X500Name_City = "NoWhere";
-    private static final String X500Name_State = "SomeState";
-    private static final String X500Name_Country = "Internet";
+
 }

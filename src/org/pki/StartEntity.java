@@ -1,9 +1,11 @@
 package org.pki;
 
+import org.pki.dto.SocketMessage;
 import org.pki.entities.CertificateOfAuthority;
 import org.pki.entities.Client;
 import org.pki.entities.Server;
 import org.pki.util.Certificate;
+import org.pki.util.EntityUtil;
 import org.pki.util.Key;
 import org.pki.util.Keygen;
 
@@ -17,50 +19,43 @@ import java.util.HashMap;
 
 public class StartEntity {
     public static void main(String [] args) throws Exception{
-        if(args.length > 4){
-            System.out.println("Error: Invalid Arguments!");
+        if(args.length < 1){
+            System.out.println("Error: Please !");
         }else{
             String role = args[0];
             if(role.equals("SERVER")){
-                startServer(args[1], args[2], args[3]);
+                startServer();
             }else if(role.equals("CLIENT")){
-                startClient(args[1], args[2], args[3]);
+                startClient();
             }else if(role.equals("CA")){
-                startCertificateOfAuthority(args[1], args[2], args[3]);
+                startCertificateOfAuthority();
             }else {
                 System.out.println("Error: Invalid Role!");
             }
         }
     }
 
-    private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{
-        //Check args
-        if(certificatePath.equals("D")){
-            System.out.println("Using default certificate path.");
-            certificatePath = Server.CertificateFile_Default;
-        }
-        if(keyPath.equals("D")) {
-            System.out.println("Using default key path.");
-            keyPath = Server.KeyFile_Default;
-        }
-        if(trustedCertsDir.equals("D")) {
-            System.out.println("Using default trusted certificate path.");
-            trustedCertsDir = Server.TrustedCertsDir_Default;
-        }
+    private static void startServer() throws Exception{
         //create cert/key if necessary
-        File cp = new File(certificatePath);
-        File kp = new File(keyPath);
-        if((!cp.exists() && !kp.exists()) || Server.OverwriteKeys){
-            System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(Server.getX500Name());
-            kg.getCertificate().outputCertificateToFile(cp);
-            kg.getKey().outputKeyToFile(kp);
-        }
+        File certificateFile = new File(Server.CertificateFile_Default);
+        File keyFile = new File(Server.KeyFile_Default);
+        File caCertFile = new File(Server.CACertificateFile_Default);
 
-        // Load certs/keys
-        Certificate serverCertificate = new Certificate(cp);
-        Key serverKey = new Key(kp, Key.ALGORITHM_RSA);
-        HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
+        Certificate caCertificate = new Certificate(caCertFile);
+        Socket caSocket = new Socket("localhost", CertificateOfAuthority.Port);
+
+        System.out.println("Generating Certs and Keys...");
+        Keygen keygen = new Keygen(Keygen.generateX500Name(Server.X500Name_CommonName));
+
+        Key serverKey = keygen.getKey();
+        SocketMessage messageForCA = new SocketMessage(false, caCertificate.encrypt(keygen.getCertificate().getEncoded()));
+        SocketMessage replyFromCA = EntityUtil.getCertificateSigned(caSocket, messageForCA);
+        Certificate serverCertificate = new Certificate(EntityUtil.decryptMessage(caCertificate, serverKey, replyFromCA.getData()));
+
+        serverKey.outputKeyToFile(keyFile);
+        serverCertificate.outputCertificateToFile(certificateFile);
+
+        HashMap<Principal, Certificate> certificateStore = getCertificateStore(Server.TrustedCertsDir_Default);
 
         //Start server
         ServerSocket serverSocket = new ServerSocket(Server.Port);
@@ -71,73 +66,50 @@ public class StartEntity {
         }
     }
 
-    private static void startCertificateOfAuthority(String trustedCertsDir, String certificatePath, String keyPath)throws Exception{
-        if(certificatePath.equals("D")){
-            System.out.println("Using default certificate path.");
-            certificatePath = CertificateOfAuthority.CertificateFile_Default;
-        }
-        if(keyPath.equals("D")) {
-            System.out.println("Using default key path.");
-            keyPath = CertificateOfAuthority.KeyFile_Default;
-        }
-        if(trustedCertsDir.equals("D")) {
-            System.out.println("Using default trusted certificate path.");
-            trustedCertsDir = CertificateOfAuthority.TrustedCertsDir_Default;
-        }
-        File cp = new File(certificatePath);
-        File kp = new File(keyPath);
-        if((!cp.exists() && !kp.exists()) || CertificateOfAuthority.OverwriteKeys){
-            System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(Server.getX500Name());
-            kg.getCertificate().outputCertificateToFile(cp);
-            kg.getKey().outputKeyToFile(kp);
-        }
+    private static void startCertificateOfAuthority()throws Exception{
 
+        System.out.println("Generating Certs and Keys...");
+        Keygen keygen = new Keygen(Keygen.generateX500Name(CertificateOfAuthority.X500Name_CommonName));
         // Load certs/keys
-        Certificate caCertificate = new Certificate(cp);
-        HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
-        Key key = new Key(kp, Key.ALGORITHM_RSA);
+        Certificate caCertificate = keygen.getCertificate();
+        Key caKey = keygen.getKey();
+
+        caCertificate.outputCertificateToFile(new File(CertificateOfAuthority.CertificateFile_Default));
+        caCertificate.outputCertificateToFile(new File(Server.TrustedCertsDir_Default + "/ca.crt"));
+        caCertificate.outputCertificateToFile(new File(Client.CertificateFile_Default + "/ca.crt"));
+
+        caKey.outputKeyToFile(new File(CertificateOfAuthority.KeyFile_Default));
+
+        HashMap<Principal, Certificate> certificateStore = getCertificateStore(CertificateOfAuthority.TrustedCertsDir_Default);
 
         ServerSocket serverSocket = new ServerSocket(CertificateOfAuthority.Port);
         while (true){
             Socket socket = serverSocket.accept();
             System.out.println("Handling new CA connection");
-            new Thread(new CertificateOfAuthority(socket, certificateStore, caCertificate, key)).start();
+            new Thread(new CertificateOfAuthority(socket, certificateStore, caCertificate, caKey)).start();
         }
     }
 
-    private static void startClient(String trustedCertsDir, String certificatePath, String keyPath)throws Exception{
-        //Check args
-        if(certificatePath.equals("D")){
-            System.out.println("Using default certificate path.");
-            certificatePath = Client.CertificateFile_Default;
-        }
-        if(keyPath.equals("D")) {
-            System.out.println("Using default key path.");
-            keyPath = Client.KeyFile_Default;
-        }
-        if(trustedCertsDir.equals("D")) {
-            System.out.println("Using default trusted certificate path.");
-            trustedCertsDir = Client.TrustedCertsDir_Default;
-        }
-        //create cert/key if necessary
-        File cp = new File(certificatePath);
-        File kp = new File(keyPath);
-        if((!cp.exists() && !kp.exists()) || Client.OverwriteKeys){
-            System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(Client.getX500Name());
-            kg.getCertificate().outputCertificateToFile(cp);
-            kg.getKey().outputKeyToFile(kp);
-        }
+    private static void startClient()throws Exception{
 
-        // Load certs/keys
-        Certificate certificate = new Certificate(cp);
-        Key key = new Key(kp, Key.ALGORITHM_RSA);
-        HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
+        Certificate caCertificate = new Certificate(new File(Client.CACertificateFile_Default));
+        Socket caSocket = new Socket("localhost", CertificateOfAuthority.Port);
+
+        System.out.println("Generating Certs and Keys...");
+        Keygen keygen = new Keygen(Keygen.generateX500Name(Client.X500Name_CommonName));
+
+        Key clientKey = keygen.getKey();
+        SocketMessage messageForCA = new SocketMessage(false, caCertificate.encrypt(keygen.getCertificate().getEncoded()));
+        SocketMessage replyFromCA = EntityUtil.getCertificateSigned(caSocket, messageForCA);
+        Certificate clientCertificate = new Certificate(EntityUtil.decryptMessage(caCertificate, clientKey, replyFromCA.getData()));
+
+        clientKey.outputKeyToFile(new File(Client.KeyFile_Default));
+        clientCertificate.outputCertificateToFile(new File(Client.CertificateFile_Default));
+
+        HashMap<Principal, Certificate> certificateStore = getCertificateStore(Client.TrustedCertsDir_Default);
 
         Socket socket = new Socket("localhost", Server.Port);
-        System.out.println("Starting client");
-        new Thread(new Client(socket, certificateStore, certificate, key)).start();
+        new Thread(new Client(socket, certificateStore, clientCertificate, clientKey)).start();
     }
 
     private static HashMap<Principal, Certificate> getCertificateStore(String trustedCertsDir){

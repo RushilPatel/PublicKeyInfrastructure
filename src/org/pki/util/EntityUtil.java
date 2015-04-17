@@ -2,6 +2,7 @@ package org.pki.util;
 
 import org.pki.dto.SocketMessage;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.cert.CertificateException;
@@ -45,7 +46,9 @@ public class EntityUtil {
         }
     }
 
-    public static SocketMessage getCertificateSigned(Socket socket, SocketMessage mySocketMessage){
-        return null; // todo
+    public static SocketMessage getCertificateSigned(Socket socket, SocketMessage mySocketMessage) throws IOException{
+        SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+        socketIOStream.sendMessage(mySocketMessage);
+        return socketIOStream.readMessage();
     }
 }

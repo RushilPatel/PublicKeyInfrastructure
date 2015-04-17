@@ -5,13 +5,9 @@ import org.pki.util.Certificate;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
 import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
@@ -32,11 +28,14 @@ public class CertificateOfAuthority implements Runnable{
 
     @Override
     public void run() {
-
-    }
-
-    public Certificate signCertificate(X509Certificate certificateToSign) throws Exception{
-        return this.certificate.sign(new Certificate(certificateToSign), this.privateKey);
+        try{
+            SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+            SocketMessage message = socketIOStream.readMessage();
+            Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
+            Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
     public static X500Name getX500Name()throws IOException {

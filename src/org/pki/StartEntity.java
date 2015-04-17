@@ -7,9 +7,11 @@ import org.pki.util.Key;
 import org.pki.util.Keygen;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Principal;
+import java.security.cert.CertificateException;
 import java.util.HashMap;
 
 public class StartEntity {
@@ -60,6 +62,7 @@ public class StartEntity {
         ServerSocket serverSocket = new ServerSocket(Server.Port);
         while (true){
             Socket socket = serverSocket.accept();
+            System.out.println("Handling new Server connection");
             new Thread(new Server(socket, certificateStore, serverCertificate, serverKey)).start();
         }
     }
@@ -94,6 +97,7 @@ public class StartEntity {
         ServerSocket serverSocket = new ServerSocket(CertificateOfAuthority.Port);
         while (true){
             Socket socket = serverSocket.accept();
+            System.out.println("Handling new CA connection");
             new Thread(new CertificateOfAuthority(socket, certificateStore, caCertificate, key)).start();
         }
     }
@@ -103,15 +107,19 @@ public class StartEntity {
 
     }
 
-    private static HashMap<Principal, Certificate> getCertificateStore(String trustedCertsDir) throws Exception{
+    private static HashMap<Principal, Certificate> getCertificateStore(String trustedCertsDir){
         HashMap<Principal, Certificate> certificateStore = new HashMap<Principal, Certificate>();
-
-        for(File file : new File(trustedCertsDir).listFiles()){
-            if(file == null){
-                break;
+        if(new File(trustedCertsDir).listFiles().length > 0){
+            for(File file : new File(trustedCertsDir).listFiles()){
+                try {
+                    Certificate certificate = new Certificate(file);
+                    certificateStore.put(certificate.getSubject(), certificate);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                }
             }
-            Certificate certificate = new Certificate(file);
-            certificateStore.put(certificate.getSubject(), certificate);
         }
         return certificateStore;
     }

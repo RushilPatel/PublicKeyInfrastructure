@@ -49,7 +49,7 @@ public class Client implements Runnable{
             //if clientCertificate is null, it is invalid
             if(serverCertificate != null){
                 //encrypt server's cert with client's public anad send it to client
-                SocketMessage certMessage = new SocketMessage(false, EntityUtil.encryptMessage(this.certificate.getX509Certificate().getEncoded()));
+                SocketMessage certMessage = new SocketMessage(false, EntityUtil.encryptMessage(this.serverCertificate.getEncoded(),privateKey,certificate.getB));
                 socketIOStream.sendMessage(certMessage);
             }else{
                 socketIOStream.close();

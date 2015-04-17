@@ -47,6 +47,10 @@ public class Key {
         this.privateKey = kf.generatePrivate(keySpec);
     }
 
+    public byte[] getEncoded(){
+        return this.privateKey.getEncoded();
+    }
+
     public Key(PrivateKey privateKey){
         this.privateKey = privateKey;
     }

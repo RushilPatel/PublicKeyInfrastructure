@@ -31,8 +31,8 @@ public class CertificateOfAuthority implements Runnable{
         try{
             SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
             SocketMessage message = socketIOStream.readMessage();
-            Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
-            Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
+            //Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
+            //Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
         }catch (IOException e){
             e.printStackTrace();
         }

@@ -97,9 +97,9 @@ public class Server implements Runnable{
          X500Name x500Name = new X500Name(X500Name_CommonName, X500Name_OrganizationalUnit, X500Name_Organization, X500Name_City, X500Name_State, X500Name_Country);
          return x500Name;
      }
-    public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";
-    public static final String CertificateFile_Default = "certificatestore/ca/cert.crt";
-    public static final String KeyFile_Default = "certificatestore/ca/key.key";
+    public static final String TrustedCertsDir_Default = "certificatestore/server/trustedcerts";
+    public static final String CertificateFile_Default = "certificatestore/server/cert.crt";
+    public static final String KeyFile_Default = "certificatestore/server/key.key";
     public static final boolean OverwriteKeys = true;
     public static final int Port = 7777;
 

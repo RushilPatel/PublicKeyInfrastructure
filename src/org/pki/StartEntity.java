@@ -48,6 +48,8 @@ public class StartEntity {
         if((!cp.exists() && !kp.exists()) || Server.OverwriteKeys){
             System.out.println("Generating Certs and Keys...");
             Keygen kg = new Keygen(Server.getX500Name());
+            kg.getCertificate().outputCertificateToFile(cp);
+            kg.getKey().outputKeyToFile(kp);
         }
 
         // Load certs/keys

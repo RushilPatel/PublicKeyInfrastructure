@@ -65,29 +65,31 @@ public class StartEntity {
     }
 
     private static void startCertificateOfAuthority(String trustedCertsDir, String certificatePath, String keyPath)throws Exception{
-        if(certificatePath == null){
+        if(certificatePath.equals("D")){
+            System.out.println("Using default certificate path.");
             certificatePath = CertificateOfAuthority.CertificateFile_Default;
         }
-        if(keyPath == null) {
+        if(keyPath.equals("D")) {
+            System.out.println("Using default key path.");
             keyPath = CertificateOfAuthority.KeyFile_Default;
         }
-        if(trustedCertsDir == null) {
+        if(trustedCertsDir.equals("D")) {
+            System.out.println("Using default trusted certificate path.");
             trustedCertsDir = CertificateOfAuthority.TrustedCertsDir_Default;
         }
         File cp = new File(certificatePath);
         File kp = new File(keyPath);
-        Key key;
-
         if((!cp.exists() && !kp.exists()) || CertificateOfAuthority.OverwriteKeys){
             System.out.println("Generating Certs and Keys...");
-            Keygen kg = new Keygen(CertificateOfAuthority.getX500Name());
-            key = kg.getKey();
-        }else{
-            Key caKey = new Key(kp, Key.ALGORITHM_RSA);
+            Keygen kg = new Keygen(Server.getX500Name());
+            kg.getCertificate().outputCertificateToFile(cp);
+            kg.getKey().outputKeyToFile(kp);
         }
+
         // Load certs/keys
         Certificate caCertificate = new Certificate(cp);
         HashMap<Principal, Certificate> certificateStore = getCertificateStore(trustedCertsDir);
+        Key key = new Key(kp, Key.ALGORITHM_RSA);
 
         ServerSocket serverSocket = new ServerSocket(CertificateOfAuthority.Port);
         while (true){
@@ -105,7 +107,9 @@ public class StartEntity {
         HashMap<Principal, Certificate> certificateStore = new HashMap<Principal, Certificate>();
 
         for(File file : new File(trustedCertsDir).listFiles()){
-
+            if(file == null){
+                break;
+            }
             Certificate certificate = new Certificate(file);
             certificateStore.put(certificate.getSubject(), certificate);
         }

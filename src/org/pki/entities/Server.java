@@ -36,7 +36,7 @@ public class Server implements Runnable{
             //validates client certificate
             try{
                 this.clientCertificate = new Certificate(socketIOStream.readMessage().getData());
-                EntityUtil.validateCertificate(certificateStore,clientCertificate);
+                EntityUtil.validateCertificate(certificateStore, clientCertificate);
             }catch (CertificateException e){
                 socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
                 System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
@@ -76,6 +76,13 @@ public class Server implements Runnable{
          X500Name x500Name = new X500Name(X500Name_CommonName, X500Name_OrganizationalUnit, X500Name_Organization, X500Name_City, X500Name_State, X500Name_Country);
          return x500Name;
      }
+
+
+    public static final String DEPOSIT = "DEPOSIT";
+    public static final String WITHDRAW = "WITHDRAW";
+    public static final String BALANCE = "BALANCE";
+    public static final String DONE = "DONE";
+
     public static final String TrustedCertsDir_Default = "certificatestore/server/trustedcerts";
     public static final String CertificateFile_Default = "certificatestore/server/cert.crt";
     public static final String KeyFile_Default = "certificatestore/server/key.key";

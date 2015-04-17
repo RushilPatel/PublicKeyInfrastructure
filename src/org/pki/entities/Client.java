@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
+import java.util.Scanner;
 
 public class Client implements Runnable{
 
@@ -21,6 +22,8 @@ public class Client implements Runnable{
     private Certificate certificate;
     private Key privateKey;
     private Certificate serverCertificate;
+    private Scanner num = null;
+    SocketIOStream socketIOStream = null;
 
     public Client(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
@@ -32,12 +35,17 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+            num = new Scanner(System.in);
+            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+            SocketMessage certMessage = new SocketMessage(false,this.certificate.getEncoded());
+            socketIOStream.sendMessage(certMessage);
+
 
             //validates client certificate
             try{
                 this.serverCertificate = new Certificate(socketIOStream.readMessage().getData());
                 EntityUtil.validateCertificate(certificateStore, serverCertificate);
+                System.out.println("Server certificate validated");
             }catch (CertificateException e){
                 socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
                 System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
@@ -45,22 +53,13 @@ public class Client implements Runnable{
                 e.printStackTrace();
             }
 
-
             //if clientCertificate is null, it is invalid
             if(serverCertificate != null){
-                //encrypt server's cert with client's public anad send it to client
-                SocketMessage certMessage = new SocketMessage(false, EntityUtil.encryptMessage(this.serverCertificate.getEncoded(),privateKey,certificate.getB));
-                socketIOStream.sendMessage(certMessage);
+                getUserRequest();
             }else{
                 socketIOStream.close();
                 socket.close();
                 return;
-            }
-
-            String request = null;
-            while(request != "DONE"){
-                request = socketIOStream.readMessage().getData().toString();
-                System.out.println(request);
             }
 
         }catch (IOException e){
@@ -71,6 +70,81 @@ public class Client implements Runnable{
             e.printStackTrace();
         }
 
+    }
+
+    private String getUserRequest()throws Exception{
+        int transaction;
+        double balance = 0;
+        double amount;
+        boolean done = false;
+        do {
+            System.out.println("1. Deposit");
+            System.out.println("2. Withdraw");
+            System.out.println("3. Check balance");
+            System.out.println("4. Done!");
+            System.out.print("Enter your choice:  ");
+
+            transaction = num.nextInt();
+            switch (transaction) {
+                case 1:
+                    System.out.print("Enter Deposit Amount: ");
+                    amount = num.nextDouble();
+
+                    // validation.
+                    if (amount <= 0)
+                        System.out.println("Negative amount. Try again.");
+                    else {
+                        SocketMessage depositMsg = new SocketMessage(false,
+                                EntityUtil.encryptMessage(serverCertificate, privateKey,
+                                        (Server.DEPOSIT + ":" + Double.toString(amount)).getBytes()));
+                        socketIOStream.sendMessage(depositMsg);
+                        System.out.println("$" + amount + " has been deposited into your account.");
+                    }
+                    break;
+                case 2:
+                    System.out.print("Enter Withdraw Amount: ");
+
+                    amount = num.nextDouble();
+
+                    // validation.
+                    if (amount < 0)
+                        System.out.println("Negative amount. Try again.");
+                    else {
+                        SocketMessage withdrawMsg = new SocketMessage(false,
+                                EntityUtil.encryptMessage(serverCertificate, privateKey,
+                                        (Server.WITHDRAW + ":" + Double.toString(amount)).getBytes()));
+                        socketIOStream.sendMessage(withdrawMsg);
+                        System.out.println("$" + amount + " has been deposited into your account.");                        System.out.println("$" + amount + " has been withdrawn from your account.");
+                    }
+                    break;
+                case 3:
+                    SocketMessage withdrawMsg = new SocketMessage(false,
+                            EntityUtil.encryptMessage(serverCertificate, privateKey,
+                                    Server.BALANCE.getBytes()));
+                    socketIOStream.sendMessage(withdrawMsg);
+                    socketIOStream.readMessage();
+                    byte[] myBalance = EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData());
+                    String bal = new String(myBalance);
+                    System.out.println(bal);
+                    break;
+                case 4:
+                    SocketMessage doneMsg = new SocketMessage(false,
+                            EntityUtil.encryptMessage(serverCertificate, privateKey,
+                                    Server.DONE.getBytes()));
+                    socketIOStream.sendMessage(doneMsg);
+                    done = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Try again.");
+                    break;
+            }
+            System.out.println();
+
+        } while (!done);
+
+
+        return null;
     }
 
     public static X500Name getX500Name()throws IOException{

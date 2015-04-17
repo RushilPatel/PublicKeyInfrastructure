@@ -31,23 +31,6 @@ public class Keygen {
         }catch (Exception e){
             throw new RuntimeException(e);
         }
-
-//        CertAndKeyGen unsignedKey = generateKeyPair();
-//        if(x500Named.equals(CertificateOfAuthority.getX500Name())){
-//            System.out.println("I am the CA, self signing");
-//            certificate = new Certificate(unsignedKey.getSelfCertificate(x500Named, 1096));
-//        }else{
-//            int signAttempts = 0;
-//            while(certificate == null && signAttempts < 10) {
-//                signAttempts++;
-//                Thread.sleep(1000);
-//                System.out.println("Requesting CA to sign my key. " + signAttempts);
-//                certificate = getSignedCertificate(unsignedKey.getSelfCertificate(x500Named, 1096), key, caSocket);
-//            }
-//            if(certificate == null){
-//                throw new Exception("Unable to sign Certificate");
-//            }
-//        }
     }
 
     private void generateSelfSignedCertificate(X500Name x500Name,String keyAlgorithm, String signatureAlgorithm, int keySize, int validity) throws NoSuchAlgorithmException, InvalidKeyException, CertificateException, NoSuchProviderException, SignatureException{

@@ -31,13 +31,16 @@ public class StartEntity {
     }
 
     private static void startServer(String trustedCertsDir, String certificatePath, String keyPath) throws Exception{
-        if(certificatePath == null){
+        if(certificatePath.equals("D")){
+            System.out.println("Using default certificate path.");
             certificatePath = Server.CertificateFile_Default;
         }
-        if(keyPath == null) {
+        if(keyPath.equals("D")) {
+            System.out.println("Using default key path.");
             keyPath = Server.KeyFile_Default;
         }
-        if(trustedCertsDir == null) {
+        if(trustedCertsDir.equals("D")) {
+            System.out.println("Using default trusted certificate path.");
             trustedCertsDir = Server.TrustedCertsDir_Default;
         }
         File cp = new File(certificatePath);

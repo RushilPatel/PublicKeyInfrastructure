@@ -76,7 +76,7 @@ public class StartEntity {
 
         caCertificate.outputCertificateToFile(new File(CertificateOfAuthority.CertificateFile_Default));
         caCertificate.outputCertificateToFile(new File(Server.TrustedCertsDir_Default + "/ca.crt"));
-        caCertificate.outputCertificateToFile(new File(Client.CertificateFile_Default + "/ca.crt"));
+        caCertificate.outputCertificateToFile(new File(Client.TrustedCertsDir_Default + "/ca.crt"));
 
         caKey.outputKeyToFile(new File(CertificateOfAuthority.KeyFile_Default));
 
@@ -117,8 +117,10 @@ public class StartEntity {
         if(new File(trustedCertsDir).listFiles().length > 0){
             for(File file : new File(trustedCertsDir).listFiles()){
                 try {
-                    Certificate certificate = new Certificate(file);
-                    certificateStore.put(certificate.getSubject(), certificate);
+                    if(file.getName().contains(".crt")) {
+                        Certificate certificate = new Certificate(file);
+                        certificateStore.put(certificate.getSubject(), certificate);
+                    }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (CertificateException e) {

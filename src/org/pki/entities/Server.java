@@ -57,9 +57,9 @@ public class Server implements Runnable{
             }
 
             String request = null;
-            while(request != "DONE"){
-                request = socketIOStream.readMessage().getData().toString();
-                System.out.println(request);
+            while(request != DONE){
+                byte[] msg = socketIOStream.readMessage().getData();
+                System.out.println(new String(msg));
             }
 
         }catch (IOException e){

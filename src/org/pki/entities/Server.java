@@ -5,7 +5,6 @@ import org.pki.util.Certificate;
 import org.pki.util.EntityUtil;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
-import sun.security.x509.X500Name;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
@@ -20,6 +19,11 @@ public class Server implements Runnable{
     private Certificate certificate;
     private Key privateKey;
     private Certificate clientCertificate;
+    private SocketIOStream socketIOStream = null;
+
+
+    private double clientBalance = 1000;
+
 
     /**
      *
@@ -39,7 +43,7 @@ public class Server implements Runnable{
     @Override
     public void run() {
         try{
-            SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
 
             //validates client certificate
             try{
@@ -64,12 +68,7 @@ public class Server implements Runnable{
                 return;
             }
 
-            String request = null;
-            while(request != DONE){
-                byte[] msg = EntityUtil.decryptMessage(clientCertificate, privateKey, socketIOStream.readMessage().getData());
-                request = new String(msg);
-                System.out.println(new String(msg));
-            }
+            while(!handleClientRequest().contains(DONE));
 
         }catch (IOException e){
             e.printStackTrace();
@@ -78,6 +77,37 @@ public class Server implements Runnable{
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private String handleClientRequest(){
+        String req = "";
+        try {
+            req = new String(EntityUtil.decryptMessage(clientCertificate, privateKey, socketIOStream.readMessage().getData()));
+            System.out.println("\nNew Message: "+new String(req));
+
+            if(req.contains(DEPOSIT)){
+                String[] ary = req.split(":");
+                System.out.println("Depositing : " + ary[1]);
+                clientBalance += Double.parseDouble(ary[1]);
+            }else if(req.contains(WITHDRAW)){
+                String[] ary = req.split(":");
+                System.out.println("Withdrawing : " + ary[1]);
+                clientBalance -= Double.parseDouble(ary[1]);
+            }else if(req.contains(BALANCE)){
+                System.out.println("Reporting client's balance");
+                SocketMessage balMsg = new SocketMessage(false,
+                        EntityUtil.encryptMessage(clientCertificate, privateKey,
+                                Double.toString(clientBalance).getBytes()));
+                socketIOStream.sendMessage(balMsg);
+            }else if(req.contains(DONE)){
+                System.out.println("Client is finished. Terminating connection");
+            }else{
+                System.out.println("Unrecognized request, ignoring");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req;
     }
 
     public static final String DEPOSIT = "DEPOSIT";

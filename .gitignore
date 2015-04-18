@@ -31,6 +31,8 @@
 ## File-based project format:
 *.ipr
 *.iws
+*.DS_Store
+
 
 ## Plugin-specific files:
 

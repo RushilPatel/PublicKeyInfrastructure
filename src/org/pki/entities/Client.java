@@ -119,14 +119,12 @@ public class Client implements Runnable{
                     }
                     break;
                 case 3:
-                    SocketMessage withdrawMsg = new SocketMessage(false,
+                    SocketMessage balReqMsg = new SocketMessage(false,
                             EntityUtil.encryptMessage(serverCertificate, privateKey,
                                     Server.BALANCE.getBytes()));
-                    socketIOStream.sendMessage(withdrawMsg);
-                    socketIOStream.readMessage();
-                    byte[] myBalance = EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData());
-                    String bal = new String(myBalance);
-                    System.out.println(bal);
+                    socketIOStream.sendMessage(balReqMsg);
+                    String bal = new String(EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData()));
+                    System.out.println("***** Balance: "+bal.toString() + "*****");
                     break;
                 case 4:
                     SocketMessage doneMsg = new SocketMessage(false,

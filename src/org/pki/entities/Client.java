@@ -1,12 +1,10 @@
 package org.pki.entities;
 
-
 import org.pki.dto.SocketMessage;
 import org.pki.util.Certificate;
 import org.pki.util.EntityUtil;
 import org.pki.util.Key;
 import org.pki.util.SocketIOStream;
-import sun.security.x509.X500Name;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
@@ -15,6 +13,9 @@ import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Scanner;
 
+/**
+ * This class acts like a client to the banking sever
+ */
 public class Client implements Runnable{
 
     private Socket socket;
@@ -25,6 +26,13 @@ public class Client implements Runnable{
     private Scanner num = null;
     SocketIOStream socketIOStream = null;
 
+    /**
+     * creates a new client obj to interact with the serer
+     * @param socket socket to use when talking to server
+     * @param certificateStore my trusted certs
+     * @param certificate my cert to sign requests with
+     * @param privateKey my key to decrypt incoming messages
+     */
     public Client(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
         this.certificateStore = certificateStore;
@@ -35,13 +43,11 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            num = new Scanner(System.in);
-            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
-            SocketMessage certMessage = new SocketMessage(false,this.certificate.getEncoded());
-            socketIOStream.sendMessage(certMessage);
+            num = new Scanner(System.in); // allows for user input
+            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream()); //sets up in/out on the socket
+            socketIOStream.sendMessage(new SocketMessage(false,this.certificate.getEncoded())); // sends my cert to server for it to verify
 
-
-            //validates client certificate
+            //validates server certificate
             try{
                 this.serverCertificate = new Certificate((privateKey.decrypt(socketIOStream.readMessage().getData())));
                 EntityUtil.validateCertificate(certificateStore, serverCertificate);
@@ -53,7 +59,7 @@ public class Client implements Runnable{
                 e.printStackTrace();
             }
 
-            //if clientCertificate is null, it is invalid
+            //if servercert is null, it is invalid
             if(serverCertificate != null){
                 getUserRequest();
             }else{
@@ -73,12 +79,18 @@ public class Client implements Runnable{
     }
 
 
-    private String getUserRequest()throws Exception{
+    /**
+     * this is where the clients requests are handled.
+     * executing stays in here until the client is done making requests
+     * @throws Exception us being lazy
+     */
+    private void getUserRequest()throws Exception{
         int transaction;
         double balance = 0;
         double amount;
         boolean done = false;
         do {
+            //possible requests
             System.out.println("1. Deposit");
             System.out.println("2. Withdraw");
             System.out.println("3. Check balance");
@@ -95,6 +107,7 @@ public class Client implements Runnable{
                     if (amount <= 0)
                         System.out.println("Negative amount. Try again.");
                     else {
+                        //send request to server
                         SocketMessage depositMsg = new SocketMessage(false,
                                 EntityUtil.encryptMessage(serverCertificate, privateKey,
                                         (Server.DEPOSIT + ":" + Double.toString(amount)).getBytes()));
@@ -115,7 +128,7 @@ public class Client implements Runnable{
                                 EntityUtil.encryptMessage(serverCertificate, privateKey,
                                         (Server.WITHDRAW + ":" + Double.toString(amount)).getBytes()));
                         socketIOStream.sendMessage(withdrawMsg);
-                        System.out.println("$" + amount + " has been deposited into your account.");                        System.out.println("$" + amount + " has been withdrawn from your account.");
+                        System.out.println("$" + amount + " has been withdrawn from your account.");
                     }
                     break;
                 case 3:
@@ -123,6 +136,7 @@ public class Client implements Runnable{
                             EntityUtil.encryptMessage(serverCertificate, privateKey,
                                     Server.BALANCE.getBytes()));
                     socketIOStream.sendMessage(balReqMsg);
+                    //waits for response from the server
                     String bal = new String(EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData()));
                     System.out.println("***** Balance: "+bal.toString() + "*****");
                     break;
@@ -141,9 +155,7 @@ public class Client implements Runnable{
             System.out.println();
 
         } while (!done);
-
-
-        return null;
+        System.out.println("Have a good one!");
     }
 
     public static final String TrustedCertsDir_Default = "certificatestore/client/trustedcerts";

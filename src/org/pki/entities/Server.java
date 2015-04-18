@@ -20,17 +20,15 @@ public class Server implements Runnable{
     private Key privateKey;
     private Certificate clientCertificate;
     private SocketIOStream socketIOStream = null;
-
-
     private double clientBalance = 1000;
 
 
     /**
      *
-     * @param socket
-     * @param certificateStore
-     * @param certificate
-     * @param privateKey
+     * @param socket new client connection
+     * @param certificateStore the cert store to use for authentication
+     * @param certificate my cert to sign my messages with
+     * @param privateKey my private key to decrypt incoming messages
      */
     public Server(Socket socket, HashMap<Principal, Certificate> certificateStore, Certificate certificate, Key privateKey){
         this.socket = socket;
@@ -43,7 +41,7 @@ public class Server implements Runnable{
     @Override
     public void run() {
         try{
-            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
+            socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream()); // set up in and out streams from client
 
             //validates client certificate
             try{
@@ -68,7 +66,7 @@ public class Server implements Runnable{
                 return;
             }
 
-            while(!handleClientRequest().contains(DONE));
+            while(!handleClientRequest().contains(DONE)); //handles client requests
 
         }catch (IOException e){
             e.printStackTrace();
@@ -79,9 +77,14 @@ public class Server implements Runnable{
         }
     }
 
+    /**
+     * Handles the client while they continue to make requests
+     * @return
+     */
     private String handleClientRequest(){
         String req = "";
         try {
+            //decrypt client request
             req = new String(EntityUtil.decryptMessage(clientCertificate, privateKey, socketIOStream.readMessage().getData()));
             System.out.println("\nNew Message: "+new String(req));
 

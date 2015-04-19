@@ -146,7 +146,7 @@ public class Key {
         return this.privateKey.equals(key.getPrivateKey());
     }
 
-    //encrypts of decrypts data. Implements Electronic Code Book (ECB) to cipher large blocks of data
+    //encrypts or decrypts data. Implements Electronic Code Book (ECB) to cipher large blocks of data
     private byte[] encryptOrDecrypt(byte[] data, boolean encrypt) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException{
         //init cipher for encrypt or decrypt
         int mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;

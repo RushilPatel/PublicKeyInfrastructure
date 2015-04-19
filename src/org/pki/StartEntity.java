@@ -25,7 +25,7 @@ public class StartEntity {
      * @throws Exception
      */
     public static void main(String [] args) throws Exception{
-        //if no argument is given, run all roles, in seperate threads
+        //if no argument is given, run all roles in seperate threads
         if(args.length < 1){
             Thread caThread = new Thread(new Runnable() {
                 @Override

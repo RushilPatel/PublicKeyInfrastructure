@@ -38,4 +38,14 @@ public class SocketMessage {
     public int getDataLength(){
         return data.length;
     }
+
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("BEGINNING OF MESSAGE\n");
+        sb.append("Is Error: " + this.isError());
+        sb.append("\nLength: " + this.getData().length);
+        sb.append("\nData: " + new String(this.getData()));
+        sb.append("\nEND OF MESSAGE");
+        return sb.toString();
+    }
 }

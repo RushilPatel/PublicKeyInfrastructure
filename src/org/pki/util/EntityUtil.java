@@ -1,6 +1,8 @@
 package org.pki.util;
 
 import org.pki.dto.SocketMessage;
+import org.pki.x509.Certificate;
+import org.pki.x509.Key;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -19,6 +21,7 @@ public class EntityUtil {
      * @throws Exception lazyness knows no bounds
      */
     public static byte[] encryptMessage(Certificate cert, Key key,byte[] data) throws Exception{
+        //decrypt with receiver's private key and sender's public key
         return cert.encrypt(key.encrypt(data));
     }
 
@@ -31,6 +34,7 @@ public class EntityUtil {
      * @throws Exception lazy
      */
     public static byte [] decryptMessage(Certificate cert, Key key, byte[] data) throws Exception{
+        //encrypt with sender's private key and receiver's public key
         return cert.decrypt(key.decrypt(data));
 
     }

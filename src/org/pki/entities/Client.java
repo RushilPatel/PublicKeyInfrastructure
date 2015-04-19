@@ -1,15 +1,14 @@
 package org.pki.entities;
 
 import org.pki.dto.SocketMessage;
-import org.pki.util.Certificate;
+import org.pki.x509.Certificate;
 import org.pki.util.EntityUtil;
-import org.pki.util.Key;
+import org.pki.x509.Key;
 import org.pki.util.SocketIOStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -50,7 +49,7 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            System.out.println("Client: Sending my cert to the sever. This is sent in clear text");
+            System.out.println("Client: Sending my certificate to the sever");
             socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream()); //sets up in/out on the socket
             // sends my cert to server for it to verify. This is send in clear text because either party does not have other party's public key
             socketIOStream.sendMessage(new SocketMessage(false,this.certificate.getEncoded()));
@@ -99,7 +98,6 @@ public class Client implements Runnable{
     private void getUserRequest()throws Exception{
         System.out.println("Client: Starting banking application");
         Scanner num = new Scanner(System.in); // allows for user input;
-        int transaction;
         double balance = 0;
         double amount;
         boolean done = false;
@@ -109,50 +107,50 @@ public class Client implements Runnable{
             System.out.println("2. Withdraw");
             System.out.println("3. Check balance");
             System.out.println("4. Done!");
-            System.out.print("Enter your choice:  ");
-
-            transaction = num.nextInt();
+            System.out.print("Client: Enter your choice:  ");
+            int transaction = num.nextInt();
             switch (transaction) {
                 case 1:
-                    System.out.print("Enter Deposit Amount: ");
+                    System.out.print("Client: Enter Deposit Amount: ");
                     amount = num.nextDouble();
 
                     // validation.
                     if (amount <= 0)
-                        System.out.println("Negative amount. Try again.");
+                        System.out.println("Client: Negative amount. Try again.");
                     else {
                         //send request to server
                         SocketMessage depositMsg = new SocketMessage(false,
                                 EntityUtil.encryptMessage(serverCertificate, privateKey,
                                         (Server.DEPOSIT + ":" + Double.toString(amount)).getBytes()));
                         socketIOStream.sendMessage(depositMsg);
-                        System.out.println("$" + amount + " has been deposited into your account.");
+                        System.out.println("Client: Requesting to deposit $" + amount + " into your account.");
                     }
                     break;
                 case 2:
-                    System.out.print("Enter Withdraw Amount: ");
+                    System.out.print("Client: Enter Withdraw Amount: ");
 
                     amount = num.nextDouble();
 
                     // validation.
                     if (amount < 0)
-                        System.out.println("Negative amount. Try again.");
+                        System.out.println("Client: Negative amount. Try again.");
                     else {
                         SocketMessage withdrawMsg = new SocketMessage(false,
                                 EntityUtil.encryptMessage(serverCertificate, privateKey,
                                         (Server.WITHDRAW + ":" + Double.toString(amount)).getBytes()));
                         socketIOStream.sendMessage(withdrawMsg);
-                        System.out.println("$" + amount + " has been withdrawn from your account.");
+                        System.out.println("Client: Requesting to withdraw $" + amount + " from your account.");
                     }
                     break;
                 case 3:
+                    System.out.println("Client: Requesting balance");
                     SocketMessage balReqMsg = new SocketMessage(false,
                             EntityUtil.encryptMessage(serverCertificate, privateKey,
                                     Server.BALANCE.getBytes()));
                     socketIOStream.sendMessage(balReqMsg);
                     //waits for response from the server
                     String bal = new String(EntityUtil.decryptMessage(serverCertificate,privateKey,socketIOStream.readMessage().getData()));
-                    System.out.println("***** Balance: "+bal.toString() + "*****");
+                    System.out.println("Client: ***** Balance: "+bal.toString() + "*****");
                     break;
                 case 4:
                     SocketMessage doneMsg = new SocketMessage(false,
@@ -160,15 +158,17 @@ public class Client implements Runnable{
                                     Server.DONE.getBytes()));
                     socketIOStream.sendMessage(doneMsg);
                     done = true;
+                    System.out.println("Client: Exiting Application.");
                     break;
 
                 default:
-                    System.out.println("Invalid choice. Try again.");
+                    System.out.println("Client: Invalid choice. Try again.");
                     break;
             }
+            Thread.sleep(300); // this is so that the output on screen is synchronized with server's output
             System.out.println();
 
         } while (!done);
-        System.out.println("Have a good one!");
+        System.out.println("Client: Have a good one!");
     }
 }

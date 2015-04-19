@@ -1,5 +1,7 @@
-package org.pki.util;
+package org.pki.x509;
 
+import org.pki.x509.Certificate;
+import org.pki.x509.Key;
 import sun.security.x509.CertAndKeyGen;
 import sun.security.x509.X500Name;
 import java.io.IOException;

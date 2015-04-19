@@ -4,10 +4,10 @@ import org.pki.dto.SocketMessage;
 import org.pki.entities.CertificateOfAuthority;
 import org.pki.entities.Client;
 import org.pki.entities.Server;
-import org.pki.util.Certificate;
+import org.pki.x509.Certificate;
 import org.pki.util.EntityUtil;
-import org.pki.util.Key;
-import org.pki.util.Keygen;
+import org.pki.x509.Key;
+import org.pki.x509.Keygen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -137,7 +137,7 @@ public class StartEntity {
 
         //save key to file
         caKey.outputKeyToFile(new File(CertificateOfAuthority.KeyFile_Default));
-        System.out.println("CA: Key saved to file: " + Client.KeyFile_Default);
+        System.out.println("CA: Key saved to file: " + CertificateOfAuthority.KeyFile_Default);
         //save to Client and server trusted cert dir to mimic a cert that is already present on the system
         //This is similar to how OS's ship with trusted certs already on the system
         caCertificate.outputCertificateToFile(new File(CertificateOfAuthority.CertificateFile_Default));

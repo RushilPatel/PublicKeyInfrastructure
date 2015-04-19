@@ -32,6 +32,7 @@ public class SocketIOStream {
         outputStream.writeInt(message.getDataLength()); //write the length of data
         outputStream.write(message.getData()); //write data
         outputStream.flush(); //flush stream
+        AuditService.getAuditService().log(message.toString()); //log all outgoing messages
     }
 
     /**
@@ -54,4 +55,5 @@ public class SocketIOStream {
         this.inputStream.close();
         this.outputStream.close();
     }
+
 }

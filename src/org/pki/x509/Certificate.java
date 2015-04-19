@@ -1,4 +1,4 @@
-package org.pki.util;
+package org.pki.x509;
 
 import sun.misc.BASE64Encoder;
 import sun.security.provider.X509Factory;

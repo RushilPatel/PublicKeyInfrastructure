@@ -1,9 +1,9 @@
 package org.pki.entities;
 
 import org.pki.dto.SocketMessage;
-import org.pki.util.Certificate;
+import org.pki.x509.Certificate;
 import org.pki.util.EntityUtil;
-import org.pki.util.Key;
+import org.pki.x509.Key;
 import org.pki.util.SocketIOStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -80,7 +80,7 @@ public class Server implements Runnable{
                 SocketMessage certMessage = new SocketMessage(false,this.clientCertificate.encrypt(this.certificate.getEncoded()));
                 socketIOStream.sendMessage(certMessage);
                 System.out.println("Server: Certificate exchange complete. All outgoing communication will now be encrypted using server's private key and client's public key");
-                System.out.println("Client: Now handling banking application requests");
+                System.out.println("Server: Now handling banking application requests");
             }else{
                 socketIOStream.close();
                 socket.close();
@@ -107,26 +107,25 @@ public class Server implements Runnable{
         try {
             //decrypt client request
             req = new String(EntityUtil.decryptMessage(clientCertificate, privateKey, socketIOStream.readMessage().getData()));
-            System.out.println("\nNew Message: "+new String(req));
 
             if(req.contains(DEPOSIT)){
                 String[] ary = req.split(":");
-                System.out.println("Depositing : " + ary[1]);
                 clientBalance += Double.parseDouble(ary[1]);
+                System.out.println("Server: Deposited $" + ary[1]);
             }else if(req.contains(WITHDRAW)){
                 String[] ary = req.split(":");
-                System.out.println("Withdrawing : " + ary[1]);
                 clientBalance -= Double.parseDouble(ary[1]);
+                System.out.println("Server: Withdrawn $" + ary[1]);
             }else if(req.contains(BALANCE)){
-                System.out.println("Reporting client's balance");
+                System.out.println("Server: Reporting client's balance");
                 SocketMessage balMsg = new SocketMessage(false,
                         EntityUtil.encryptMessage(clientCertificate, privateKey,
                                 Double.toString(clientBalance).getBytes()));
                 socketIOStream.sendMessage(balMsg);
             }else if(req.contains(DONE)){
-                System.out.println("Client is finished. Terminating connection");
+                System.out.println("Server: Client is finished. Terminating connection");
             }else{
-                System.out.println("Unrecognized request, ignoring");
+                System.out.println("Server: Unrecognized request, ignoring");
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,9 +1,9 @@
 package org.pki.entities;
 
 import org.pki.dto.SocketMessage;
-import org.pki.util.Certificate;
+import org.pki.x509.Certificate;
 import org.pki.util.EntityUtil;
-import org.pki.util.Key;
+import org.pki.x509.Key;
 import org.pki.util.SocketIOStream;
 import java.io.IOException;
 import java.net.Socket;

@@ -1,4 +1,4 @@
-package org.pki.util;
+package org.pki.x509;
 
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import sun.misc.BASE64Encoder;

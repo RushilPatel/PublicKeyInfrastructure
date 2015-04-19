@@ -8,9 +8,6 @@ import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 
-/**
- * Created by ttoggweiler on 4/17/15.
- */
 public class EntityUtil {
 
     /**

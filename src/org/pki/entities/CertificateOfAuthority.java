@@ -11,6 +11,12 @@ import java.security.Principal;
 import java.util.HashMap;
 
 public class CertificateOfAuthority implements Runnable{
+    public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";
+    public static final String CertificateFile_Default = "certificatestore/ca/cert.crt";
+    public static final String KeyFile_Default = "certificatestore/ca/key.key";
+    public static final int Port = 8888;
+    public static final String X500Name_CommonName = "www.CertAuth.fit.edu";
+
 
     private Socket socket = null;
     private HashMap<Principal, Certificate> certificateStore;
@@ -36,11 +42,17 @@ public class CertificateOfAuthority implements Runnable{
         try{
             SocketIOStream socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream());
             SocketMessage message = socketIOStream.readMessage();
+
+            //the certificate signing request is encrypted with CA public key
             Certificate clientCert = new Certificate(this.privateKey.decrypt(message.getData()));
+            //sign client certificate
+            System.out.println("CA: Signing certificate");
             Certificate signedClientCertificate = this.certificate.sign(clientCert, this.privateKey);
+            //encrypt the certificate and then send it. The receiver has CA's public key and its own private key, so it will be able to decrypt the signed cert
             byte[] encryptedCert = EntityUtil.encryptMessage(signedClientCertificate, this.privateKey, signedClientCertificate.getEncoded());
+            System.out.println("CA: Sending signed certificate");
             SocketMessage socketMessage = new SocketMessage(false, encryptedCert);
-            socketIOStream.sendMessage(socketMessage);
+            socketIOStream.sendMessage(socketMessage); //send signed certificate
             socketIOStream.close();
         }catch (IOException e){
             e.printStackTrace();
@@ -48,11 +60,4 @@ public class CertificateOfAuthority implements Runnable{
             e.printStackTrace();
         }
     }
-
-    public static final String TrustedCertsDir_Default = "certificatestore/ca/trustedcerts";
-    public static final String CertificateFile_Default = "certificatestore/ca/cert.crt";
-    public static final String KeyFile_Default = "certificatestore/ca/key.key";
-    public static final int Port = 8888;
-    public static final String X500Name_CommonName = "www.CertAuth.fit.edu";
-
 }

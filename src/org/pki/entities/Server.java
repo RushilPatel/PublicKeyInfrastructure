@@ -9,10 +9,23 @@ import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.util.HashMap;
 
 public class Server implements Runnable{
+    public static final String DEPOSIT = "DEPOSIT";
+    public static final String WITHDRAW = "WITHDRAW";
+    public static final String BALANCE = "BALANCE";
+    public static final String DONE = "DONE";
+    public static final String TrustedCertsDir_Default = "certificatestore/server/trustedcerts";
+    public static final String CACertificateFile_Default = "certificatestore/server/trustedcerts/ca.crt";
+    public static final String CAHost_Default = "localhost";
+    public static final String CertificateFile_Default = "certificatestore/server/cert.crt";
+
+    public static final String KeyFile_Default = "certificatestore/server/key.key";
+    public static final int Port = 7777;
+    public static final String X500Name_CommonName = "www.SecureBankServer.fit.edu";
+
+
 
     private Socket socket;
     private HashMap<Principal, Certificate> certificateStore;
@@ -45,21 +58,29 @@ public class Server implements Runnable{
 
             //validates client certificate
             try{
+                //read client certificate. This is sent in clear text
                 this.clientCertificate = new Certificate(socketIOStream.readMessage().getData());
+                System.out.println("Server: Client certificate received");
+                System.out.println("Server: Validating client certificate");
                 EntityUtil.validateCertificate(certificateStore, clientCertificate);
-            }catch (CertificateException e){
-                socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
-                System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
             }catch (Exception e){
+                //inform server of an error
+                socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
+                System.out.println("Server: Could not validate client's certificate, terminating connection" + e.getMessage());
+                clientCertificate = null;
                 e.printStackTrace();
             }
 
 
             //if clientCertificate is null, it is invalid
             if(clientCertificate != null){
-                //encrypt server's cert with client's public anad send it to client
+                System.out.println("Server: Client certificate was validated successfully");
+                System.out.println("Server: Sending my certificate to the client");
+                //encrypt server's cert with client's public key send it to client
                 SocketMessage certMessage = new SocketMessage(false,this.clientCertificate.encrypt(this.certificate.getEncoded()));
                 socketIOStream.sendMessage(certMessage);
+                System.out.println("Server: Certificate exchange complete. All outgoing communication will now be encrypted using server's private key and client's public key");
+                System.out.println("Client: Now handling banking application requests");
             }else{
                 socketIOStream.close();
                 socket.close();
@@ -112,15 +133,4 @@ public class Server implements Runnable{
         }
         return req;
     }
-
-    public static final String DEPOSIT = "DEPOSIT";
-    public static final String WITHDRAW = "WITHDRAW";
-    public static final String BALANCE = "BALANCE";
-    public static final String DONE = "DONE";
-    public static final String TrustedCertsDir_Default = "certificatestore/server/trustedcerts";
-    public static final String CACertificateFile_Default = "certificatestore/server/trustedcerts/ca.crt";
-    public static final String CertificateFile_Default = "certificatestore/server/cert.crt";
-    public static final String KeyFile_Default = "certificatestore/server/key.key";
-    public static final int Port = 7777;
-    public static final String X500Name_CommonName = "www.SecureBankServer.fit.edu";
 }

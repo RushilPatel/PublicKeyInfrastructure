@@ -18,12 +18,19 @@ import java.util.Scanner;
  */
 public class Client implements Runnable{
 
+    public static final String TrustedCertsDir_Default = "certificatestore/client/trustedcerts";
+    public static final String CACertificateFile_Default = "certificatestore/client/trustedcerts/ca.crt";
+    public static final String CertificateFile_Default = "certificatestore/client/cert.crt";
+    public static final String KeyFile_Default = "certificatestore/client/key.key";
+    public static final String X500Name_CommonName = "SecureBankClient";
+    public static final String CAHost_Default = "localhost";
+    public static final String ServerHost_Default = "localhost";
+
     private Socket socket;
     private HashMap<Principal, Certificate> certificateStore;
     private Certificate certificate;
     private Key privateKey;
     private Certificate serverCertificate;
-    private Scanner num = null;
     SocketIOStream socketIOStream = null;
 
     /**
@@ -43,29 +50,34 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            num = new Scanner(System.in); // allows for user input
+            System.out.println("Client: Sending my cert to the sever. This is sent in clear text");
             socketIOStream = new SocketIOStream(socket.getInputStream(), socket.getOutputStream()); //sets up in/out on the socket
-            socketIOStream.sendMessage(new SocketMessage(false,this.certificate.getEncoded())); // sends my cert to server for it to verify
+            // sends my cert to server for it to verify. This is send in clear text because either party does not have other party's public key
+            socketIOStream.sendMessage(new SocketMessage(false,this.certificate.getEncoded()));
 
             //validates server certificate
             try{
+                //read certificate sent by the server. The server certificate is encrypted by client's public key, so only client can decrypt it
                 this.serverCertificate = new Certificate((privateKey.decrypt(socketIOStream.readMessage().getData())));
+                System.out.println("Client: Server certificate received");
+                System.out.println("Client: Validating server certificate");
                 EntityUtil.validateCertificate(certificateStore, serverCertificate);
-                System.out.println("Server certificate validated");
-            }catch (CertificateException e){
-                socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
-                System.out.println("Problem validating clients certificate, terminating connection" + e.getMessage());
             }catch (Exception e){
+                //inform server of an error
+                socketIOStream.sendMessage(new SocketMessage(true, e.getMessage().getBytes()));
+                System.out.println("Client: Could not validate server's certificate, terminating connection" + e.getMessage());
+                serverCertificate = null;
                 e.printStackTrace();
             }
 
             //if servercert is null, it is invalid
             if(serverCertificate != null){
+                System.out.println("Client: Server certificate was validated successfully. " +
+                        "All outgoing communication will now be encrypted using client's private key and server's public key");
                 getUserRequest();
             }else{
                 socketIOStream.close();
                 socket.close();
-                return;
             }
 
         }catch (IOException e){
@@ -82,9 +94,11 @@ public class Client implements Runnable{
     /**
      * this is where the clients requests are handled.
      * executing stays in here until the client is done making requests
-     * @throws Exception us being lazy
+     * @throws Exception
      */
     private void getUserRequest()throws Exception{
+        System.out.println("Client: Starting banking application");
+        Scanner num = new Scanner(System.in); // allows for user input;
         int transaction;
         double balance = 0;
         double amount;
@@ -157,11 +171,4 @@ public class Client implements Runnable{
         } while (!done);
         System.out.println("Have a good one!");
     }
-
-    public static final String TrustedCertsDir_Default = "certificatestore/client/trustedcerts";
-    public static final String CACertificateFile_Default = "certificatestore/server/trustedcerts/ca.crt";
-    public static final String CertificateFile_Default = "certificatestore/client/cert.crt";
-    public static final String KeyFile_Default = "certificatestore/client/key.key";
-    public static final String X500Name_CommonName = "SecureBankClient";
-
 }

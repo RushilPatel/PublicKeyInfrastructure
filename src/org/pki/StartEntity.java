@@ -58,7 +58,9 @@ public class StartEntity {
                 }
             });
             caThread.start();
+            Thread.sleep(2000); //Sleeping for 2 second to let CA finish startup operations
             serverThread.start();
+            Thread.sleep(4000); //Sleeping for 4 second to let CA and Server finish startup operations
             clientThread.start();
         }else{
             String role = args[0].toUpperCase();
@@ -79,7 +81,6 @@ public class StartEntity {
      * @throws Exception
      */
     private static void startServer() throws Exception{
-        Thread.sleep(2000); //Sleeping for 3 second to let CA finish startup operations
         System.out.println("Server: Started");
 
         System.out.println("Server: Generating Self signed certificate and Private Key");
@@ -127,7 +128,6 @@ public class StartEntity {
      * @throws Exception
      */
     private static void startCertificateOfAuthority()throws Exception{
-
         System.out.println("CA: Started");
         System.out.println("CA: Generating Self signed certificate and Private Key");
         Keygen keygen = new Keygen(Keygen.generateX500Name(CertificateOfAuthority.X500Name_CommonName));
@@ -168,7 +168,6 @@ public class StartEntity {
      * @throws Exception
      */
     private static void startClient()throws Exception{
-        Thread.sleep(6000); //Sleeping for 6 second to let CA and Server finish startup operations
         System.out.println("Client: Started");
 
         System.out.println("Client: Generating Self signed certificate and Private Key");
@@ -212,7 +211,7 @@ public class StartEntity {
         if(trustedCerts.listFiles() != null && trustedCerts.listFiles().length > 0){
             for(File file : new File(trustedCertsDir).listFiles()){
                 try {
-                    if(file.getName().contains(".crt")) {
+                    if(file.getName().contains(".crt") || file.getName().contains(".cer")) {
                         Certificate certificate = new Certificate(file);
                         certificateStore.put(certificate.getSubject(), certificate);
                     }

@@ -8,7 +8,7 @@ public class AuditService {
     private DataOutputStream auditStream;
 
     private AuditService() throws FileNotFoundException{
-        this.auditStream = new DataOutputStream(new FileOutputStream(new File("audit.log")));
+        this.auditStream = new DataOutputStream(new FileOutputStream(new File("audit.log.txt")));
     }
 
     /**

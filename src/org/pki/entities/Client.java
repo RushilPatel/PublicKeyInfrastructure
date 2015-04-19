@@ -73,7 +73,7 @@ public class Client implements Runnable{
             if(serverCertificate != null){
                 System.out.println("Client: Server certificate was validated successfully. " +
                         "All outgoing communication will now be encrypted using client's private key and server's public key");
-                getUserRequest();
+                handleRequests();
             }else{
                 socketIOStream.close();
                 socket.close();
@@ -95,19 +95,20 @@ public class Client implements Runnable{
      * executing stays in here until the client is done making requests
      * @throws Exception
      */
-    private void getUserRequest()throws Exception{
+    private void handleRequests()throws Exception{
         System.out.println("Client: Starting banking application");
         Scanner num = new Scanner(System.in); // allows for user input;
-        double balance = 0;
-        double amount;
         boolean done = false;
-        do {
-            //possible requests
-            System.out.println("1. Deposit");
-            System.out.println("2. Withdraw");
-            System.out.println("3. Check balance");
-            System.out.println("4. Done!");
-            System.out.print("Client: Enter your choice:  ");
+
+        //possible requests
+        System.out.println("1. Deposit");
+        System.out.println("2. Withdraw");
+        System.out.println("3. Check balance");
+        System.out.println("4. Done!");
+        System.out.print("Client: Enter your choice:  ");
+
+        while (!done && num.hasNext()){
+            double amount;
             int transaction = num.nextInt();
             switch (transaction) {
                 case 1:
@@ -165,10 +166,19 @@ public class Client implements Runnable{
                     System.out.println("Client: Invalid choice. Try again.");
                     break;
             }
-            Thread.sleep(300); // this is so that the output on screen is synchronized with server's output
-            System.out.println();
 
-        } while (!done);
-        System.out.println("Client: Have a good one!");
+            if(transaction != 4){
+                //possible requests
+                Thread.sleep(300); // this is so that the output on screen is synchronized with server's output
+                System.out.println();
+                System.out.println("1. Deposit");
+                System.out.println("2. Withdraw");
+                System.out.println("3. Check balance");
+                System.out.println("4. Done!");
+                System.out.print("Client: Enter your choice:  ");
+            }
+
+        }
+        System.out.println("\nClient: Have a good one!");
     }
 }

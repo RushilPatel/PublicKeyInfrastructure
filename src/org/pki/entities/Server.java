@@ -87,7 +87,7 @@ public class Server implements Runnable{
                 return;
             }
 
-            while(!handleClientRequest().contains(DONE)); //handles client requests
+            while(!handleClientRequest().contains(DONE) && !socket.isClosed()); //handles client requests
 
         }catch (IOException e){
             e.printStackTrace();

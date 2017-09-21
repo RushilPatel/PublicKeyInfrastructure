@@ -8,4 +8,4 @@ Simple client/server example of a banking application using public and private k
   <li>Sign Certificates</li>
   <li>Encrypt/Decrypt data with public and private keys</li>
 </ul>
-AlphaTest
+AlphaPrimeTest

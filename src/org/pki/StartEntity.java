@@ -124,7 +124,7 @@ public class StartEntity {
 
     /**
      * CA cert/key gen
-     * starts CA entitiy
+     * Starts CA entitiy
      * @throws Exception
      */
     private static void startCertificateOfAuthority()throws Exception{
